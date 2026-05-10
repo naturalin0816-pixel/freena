@@ -187,13 +187,9 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
-        // 긴장감 틱 소리
         const playTick = () => playOsc(600, 'sine', 0.1, 0.04);
-        
-        // 멈추기 전 심장박동 텐션음
         const playTension = () => playOsc(55, 'sine', 0.4, 0.25);
 
-        // 충전 시 상승하는 톤
         let chargeOsc = null;
         function startChargeSound() {
             if (chargeOsc) return;
@@ -218,7 +214,6 @@
             }
         }
 
-        // 당첨 팡파르
         const playWinSound = () => {
             [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
                 setTimeout(() => playOsc(f, 'square', 0.05, 0.6), i * 120);
@@ -239,7 +234,7 @@
         const wheelWrapper = document.getElementById('wheelWrapper');
 
         let isSpinning = false;
-        let rotation = 0;
+        let rotation = 0; // 라디안 단위
         let speed = 0;
         let power = 0;
         let chargeInterval = null;
@@ -338,7 +333,7 @@
         /** 룰렛 그리기 로직 **/
         function draw() {
             const members = sets[currentSetIndex].members;
-            const size = canvas.width = canvas.height = 800; // 해상도 위해 크게 그림
+            const size = canvas.width = canvas.height = 800; 
             const centerX = size / 2;
             const centerY = size / 2;
             const radius = size / 2 - 20;
@@ -349,7 +344,6 @@
             members.forEach((name, i) => {
                 const startAngle = rotation + (i * sliceAngle);
                 
-                // 조각 그리기
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
@@ -359,7 +353,6 @@
                 ctx.lineWidth = 6;
                 ctx.stroke();
 
-                // 텍스트 그리기
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + sliceAngle / 2);
@@ -372,7 +365,6 @@
                 ctx.restore();
             });
 
-            // 중앙 홀 비우기
             ctx.beginPath();
             ctx.arc(centerX, centerY, 90, 0, Math.PI * 2);
             ctx.fillStyle = '#020617';
@@ -411,7 +403,7 @@
 
         function beginSpin() {
             isSpinning = true;
-            speed = 0.2 + (power / 120); // 파워에 따른 속도 결정
+            speed = 0.2 + (power / 120); 
             power = 0;
             powerFill.style.width = '0%';
             tensionPlayed = false;
@@ -422,23 +414,20 @@
             if (!isSpinning) return;
 
             rotation += speed;
-            speed *= 0.988; // 감속 계수
+            speed *= 0.988; 
 
-            // 틱틱 효과음 (각도 기반)
             const sliceAngle = (Math.PI * 2) / sets[currentSetIndex].members.length;
             if (Math.abs(rotation - lastTickAngle) >= sliceAngle) {
                 playTick();
                 lastTickAngle = rotation;
             }
 
-            // 긴장감 효과 (속도가 느려질 때 심장박동)
             if (speed < 0.04 && speed > 0.01 && !tensionPlayed) {
                 playTension();
                 tensionPlayed = true;
                 setTimeout(() => tensionPlayed = false, 500);
             }
 
-            // 속도에 따른 화면 진동
             if (speed > 0.1) {
                 wheelWrapper.classList.add('shaking');
             } else {
@@ -457,12 +446,20 @@
             }
         }
 
+        /** 당첨자 확인 (버그 수정됨) **/
         function showWinner() {
             const members = sets[currentSetIndex].members;
-            const sliceAngle = 360 / members.length;
-            // 회전각도를 도로 변환 후 정규화 (상단 포인터는 270도 지점)
-            const normalizedRotation = (rotation * 180 / Math.PI) % 360;
-            const index = Math.floor((360 - (normalizedRotation + 270) % 360) / sliceAngle) % members.length;
+            
+            // 캔버스 arc 0도는 3시 방향. 포인터는 12시 방향(270도 혹은 -90도).
+            // 현재 회전각(rotation)을 도 단위로 변환
+            const rotationDeg = (rotation * 180 / Math.PI) % 360;
+            
+            // 포인터 위치(270도)에서 현재 회전각을 뺀 뒤, 전체 조각 수로 나눔
+            const sliceDeg = 360 / members.length;
+            
+            // (포인터각도 - 현재회전각도)를 계산하여 0~360 사이로 정규화
+            const winningAngle = (270 - rotationDeg + 360) % 360;
+            const index = Math.floor(winningAngle / sliceDeg) % members.length;
             
             const winner = members[index];
             document.getElementById('resultName').innerText = winner;
@@ -481,16 +478,12 @@
             document.getElementById('resultOverlay').classList.add('hidden');
         }
 
-        // 이벤트 리스너 등록
         coreBtn.addEventListener('mousedown', startCharge);
         window.addEventListener('mouseup', releaseCharge);
         coreBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startCharge(); });
         window.addEventListener('touchend', (e) => { e.preventDefault(); releaseCharge(); });
-        
-        // 엔터키 추가 대응
         document.getElementById('newName').onkeypress = (e) => { if(e.key === 'Enter') addItem(); };
 
-        // 초기화
         selectSet(0);
     </script>
 </body>
