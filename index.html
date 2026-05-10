@@ -3,456 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>울트라 서스펜스 룰렛</title>
+    <title>프리미엄 룰렛 - 에너지 코어 에디션</title>
+    <!-- Tailwind CSS 및 폭죽 효과 라이브러리 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; }
-        .roulette-container { position: relative; width: 100%; max-width: 500px; aspect-ratio: 1/1; perspective: 1000px; }
-        .pointer {
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-            width: 46px; height: 60px; background: #f43f5e;
-            clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 30;
-            filter: drop-shadow(0 0 15px rgba(244, 63, 94, 0.8));
-            border: 2px solid white;
-        }
-        .canvas-shadow { filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.4)); transition: filter 0.3s ease; }
-        .is-spinning .canvas-shadow { filter: drop-shadow(0 0 60px rgba(244, 63, 94, 0.6)); }
-
-        /* 긴장감 넘치는 화면 진동 효과 */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            50% { transform: translate(-1px, 2px) rotate(1deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-        .shake-active { animation: shake 0.1s infinite; }
-
-        /* 게이지바 애니메이션 */
-        .power-bar-bg { height: 8px; width: 100%; background: #1e293b; border-radius: 99px; overflow: hidden; }
-        .power-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #f43f5e); transition: width 0.05s linear; }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
         
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #020617; 
+            color: white; 
+            overflow-x: hidden; 
+        }
 
-        .btn-hold { user-select: none; touch-action: manipulation; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-hold:active { transform: scale(0.92); box-shadow: 0 0 40px rgba(244, 63, 94, 0.4); }
+        /* 룰렛 컨테이너 및 캔버스 스타일 */
+        .roulette-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 500px; 
+            aspect-ratio: 1/1; 
+            margin: 0 auto; 
+        }
+        
+        canvas { 
+            width: 100%; 
+            height: 100%; 
+            filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.3)); 
+        }
+
+        /* 룰렛 포인터 (상단 화살표) */
+        .pointer {
+            position: absolute; 
+            top: -10px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 40px; 
+            height: 50px; 
+            z-index: 20;
+            background: #ef4444; 
+            clip-path: polygon(100% 0, 0 0, 50% 100%);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        /* 중앙 코어 버튼 */
+        .core-button {
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%;
+            background: radial-gradient(circle, #6366f1 0%, #4338ca 100%);
+            border: 4px solid #1e1b4b; 
+            cursor: pointer;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.6); 
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 30; 
+            user-select: none;
+            touch-action: none;
+        }
+
+        /* 버튼 충전 중 애니메이션 */
+        .core-button.charging { 
+            background: radial-gradient(circle, #f43f5e 0%, #be123c 100%);
+            box-shadow: 0 0 60px rgba(244, 63, 94, 0.9);
+            animation: pulse 0.4s infinite alternate;
+        }
+
+        @keyframes pulse { 
+            from { transform: translate(-50%, -50%) scale(1); } 
+            to { transform: translate(-50%, -50%) scale(1.15); } 
+        }
+
+        /* 화면 진동 효과 */
+        .shaking { animation: shake 0.1s infinite; }
+        @keyframes shake { 
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            25% { transform: translate(-2px, 0px) rotate(-0.5deg); }
+            50% { transform: translate(2px, 1px) rotate(0.5deg); }
+            75% { transform: translate(-1px, -1px) rotate(0deg); }
+            100% { transform: translate(1px, 2px) rotate(-0.5deg); }
+        }
+
+        /* 커스텀 스크롤바 숨기기 */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .tab-active { border-bottom: 3px solid #6366f1; color: #818cf8; font-weight: 900; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-    <div class="flex flex-col h-screen">
-        <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 pt-6 px-4 z-40">
-            <div class="max-w-7xl mx-auto flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        </div>
-                        <h1 class="text-xl font-black tracking-tighter text-white">SUSPENSE WHEEL</h1>
-                    </div>
-                    <button id="addSetBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
-                        <span>+ 새 세트</span>
-                    </button>
-                </div>
-                
-                <div id="setList" class="flex gap-2 overflow-x-auto custom-scrollbar pb-3">
-                    <!-- 탭 아이템 동적 렌더링 -->
-                </div>
-            </div>
-        </header>
+    <!-- 상단 가로 탭 세트 관리 -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="flex items-center px-4 overflow-x-auto hide-scroll whitespace-nowrap py-4 space-x-6" id="tabContainer">
+            <!-- 탭이 JS에 의해 동적으로 생성됩니다 -->
+        </div>
+    </header>
 
-        <main id="mainApp" class="flex-1 overflow-y-auto p-4 lg:p-10 flex flex-col items-center">
-            <div class="w-full max-w-6xl grid grid-cols-1 xl:grid-cols-2 gap-12 items-center">
-                
-                <!-- 왼쪽: 룰렛 섹션 -->
-                <div class="flex flex-col items-center space-y-6">
-                    <div id="rouletteWrapper" class="roulette-container">
-                        <div class="pointer"></div>
-                        <canvas id="rouletteCanvas" class="canvas-shadow w-full h-full"></canvas>
-                    </div>
+    <main class="flex-1 p-6 flex flex-col items-center justify-start space-y-8 max-w-4xl mx-auto w-full">
+        
+        <!-- 현재 세트 제목 편집 -->
+        <div class="w-full text-center mt-4">
+            <input type="text" id="setTitle" 
+                   class="bg-transparent text-3xl md:text-5xl font-black text-center border-none focus:ring-0 w-full text-indigo-100" 
+                   placeholder="세트 제목을 입력하세요">
+        </div>
 
-                    <div class="w-full max-w-xs space-y-4">
-                        <div class="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            <span>Power Meter</span>
-                            <span id="powerText">Ready</span>
-                        </div>
-                        <div class="power-bar-bg">
-                            <div id="powerBar" class="power-bar-fill"></div>
-                        </div>
-                        <button id="spinBtn" class="btn-hold w-full bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl font-black text-xl shadow-2xl shadow-indigo-500/20 disabled:bg-slate-800">
-                            꾹 눌러서 파워 충전!
-                        </button>
-                        <p class="text-center text-slate-500 text-xs font-medium">길게 누를수록 더 빠르게 돌아갑니다</p>
-                    </div>
-                </div>
-
-                <!-- 오른쪽: 관리 섹션 -->
-                <div class="bg-slate-900/50 border border-slate-800 rounded-[32px] p-8 shadow-inner backdrop-blur-sm">
-                    <div class="flex items-center justify-between mb-8">
-                        <input type="text" id="activeSetTitleInput" class="bg-transparent text-2xl font-black text-white focus:outline-none focus:ring-b-2 focus:ring-indigo-500 border-b-2 border-transparent hover:border-slate-700 transition-all">
-                        <span id="memberCount" class="bg-indigo-500/10 text-indigo-400 px-4 py-1 rounded-full text-xs font-bold border border-indigo-500/20">0 MEMBS</span>
-                    </div>
-
-                    <div class="flex gap-3 mb-6">
-                        <input type="text" id="newNameInput" placeholder="이름 추가..." class="flex-1 bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white font-medium">
-                        <button id="addNameBtn" class="bg-white text-black hover:bg-indigo-50 px-8 rounded-2xl font-bold transition-all">추가</button>
-                    </div>
-
-                    <div id="memberList" class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-3">
-                        <!-- 멤버 리스트 동적 렌더링 -->
-                    </div>
+        <!-- 룰렛 보드 섹션 -->
+        <div class="roulette-container" id="wheelWrapper">
+            <div class="pointer"></div>
+            <canvas id="rouletteCanvas"></canvas>
+            
+            <!-- 중앙 인터랙티브 버튼 -->
+            <div id="coreBtn" class="core-button">
+                <span class="text-[11px] font-bold text-indigo-200 tracking-tighter">HOLD &</span>
+                <span class="text-xl font-black text-white leading-none">SPIN</span>
+                <div id="powerBar" class="w-14 h-1.5 bg-white/20 mt-2 rounded-full overflow-hidden">
+                    <div id="powerFill" class="h-full bg-white w-0 transition-all duration-75"></div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-6">
-        <div class="text-center max-w-lg w-full animate-in zoom-in duration-500">
-            <div id="modalLabel" class="text-indigo-400 font-black tracking-[0.3em] mb-4 uppercase text-sm">Target Eliminated</div>
-            <div id="winnerName" class="text-6xl md:text-8xl font-black text-white mb-12 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)] break-words">...</div>
-            <button onclick="closeModal()" class="px-12 py-5 bg-white text-black text-xl font-black rounded-3xl hover:scale-110 transition-transform active:scale-95 shadow-2xl">다시 하기</button>
+        <!-- 이름 리스트 관리 UI -->
+        <div class="w-full max-w-lg bg-slate-900/60 rounded-3xl p-6 border border-slate-800 shadow-2xl">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-bold text-slate-400 text-lg">명단 리스트</h3>
+                <span class="bg-indigo-500/20 text-indigo-400 text-xs px-3 py-1 rounded-full font-bold" id="itemCount">0명</span>
+            </div>
+            
+            <div class="flex gap-3 mb-6">
+                <input type="text" id="newName" placeholder="새 이름 추가..." 
+                       class="flex-1 bg-slate-800/80 border-slate-700 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-slate-500 transition-all">
+                <button onclick="addItem()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold transition shadow-lg active:scale-95">추가</button>
+            </div>
+
+            <div id="nameList" class="flex flex-wrap gap-2 max-h-60 overflow-y-auto pr-2 hide-scroll">
+                <!-- 이름 태그들이 여기에 생성됩니다 -->
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center gap-4 py-4">
+            <button onclick="addNewSet()" class="bg-slate-800 hover:bg-slate-700 text-indigo-300 px-6 py-2 rounded-full text-sm font-bold border border-indigo-500/20 transition-all hover:scale-105">
+                + 새 세트 만들기 (최대 10개)
+            </button>
+            <p class="text-slate-600 text-xs">중앙 버튼을 꾹 누를수록 더 빠르게 회전합니다!</p>
+        </div>
+    </main>
+
+    <!-- 결과 당첨 팝업 모달 -->
+    <div id="resultOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 hidden backdrop-blur-2xl">
+        <div class="text-center p-10 animate-in fade-in zoom-in duration-300">
+            <p class="text-rose-500 font-black mb-6 tracking-[0.3em] text-xl uppercase">Winner Selected!</p>
+            <div class="relative inline-block">
+                <h2 id="resultName" class="text-8xl md:text-[12rem] font-black text-white mb-12 drop-shadow-[0_0_50px_rgba(99,102,241,0.8)]"></h2>
+            </div>
+            <br>
+            <button onclick="closeResult()" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-16 py-5 rounded-2xl font-black text-2xl transition-all hover:scale-110 active:scale-90 shadow-[0_0_30px_rgba(79,70,229,0.4)]">
+                확인
+            </button>
         </div>
     </div>
 
     <script>
-        let state = {
-            sets: [],
-            activeId: null,
-            isSpinning: false,
-            rotation: 0,
-            velocity: 0,
-            power: 0,
-            pressInterval: null
-        };
-
-        const colors = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#ffffff'];
-
+        /** 오디오 엔진 (Web Audio API) **/
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        function playTick(vol = 0.1) {
+        function playOsc(freq, type, vol, duration, ramp = true) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.04);
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            if(ramp) gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.04);
+            osc.stop(audioCtx.currentTime + duration);
         }
 
-        function playImpact() {
-            const osc = audioCtx.createOscillator();
+        // 긴장감 틱 소리
+        const playTick = () => playOsc(600, 'sine', 0.1, 0.04);
+        
+        // 멈추기 전 심장박동 텐션음
+        const playTension = () => playOsc(55, 'sine', 0.4, 0.25);
+
+        // 충전 시 상승하는 톤
+        let chargeOsc = null;
+        function startChargeSound() {
+            if (chargeOsc) return;
+            chargeOsc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-            osc.connect(gain);
+            chargeOsc.type = 'triangle';
+            chargeOsc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            chargeOsc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 3);
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 1.5);
+            chargeOsc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
+            chargeOsc.start();
+            chargeOsc.onended = () => { gain.disconnect(); };
+            chargeOsc.gainNode = gain;
         }
-
-        function init() {
-            const saved = localStorage.getItem('suspense_roulette_v2');
-            if (saved) {
-                state.sets = JSON.parse(saved);
-                state.activeId = state.sets[0].id;
-            } else {
-                state.sets = [{ id: Date.now(), title: "오늘의 당첨자", members: ["김철수", "이영희", "박민수", "최정윤", "정동현"] }];
-                state.activeId = state.sets[0].id;
+        function stopChargeSound() {
+            if (chargeOsc) {
+                chargeOsc.gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                chargeOsc.stop(audioCtx.currentTime + 0.1);
+                chargeOsc = null;
             }
-            renderAll();
         }
 
-        function save() {
-            localStorage.setItem('suspense_roulette_v2', JSON.stringify(state.sets));
-        }
-
-        function renderAll() {
-            renderTabs();
-            renderActiveSet();
-            drawWheel();
-        }
-
-        function renderTabs() {
-            const list = document.getElementById('setList');
-            list.innerHTML = '';
-            state.sets.forEach(set => {
-                const isActive = state.activeId === set.id;
-                const tab = document.createElement('div');
-                tab.className = `shrink-0 flex items-center gap-3 px-6 py-3 rounded-2xl cursor-pointer transition-all border font-bold text-sm select-none
-                    ${isActive 
-                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' 
-                        : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`;
-                
-                tab.onclick = () => { if(!state.isSpinning) { state.activeId = set.id; renderAll(); audioCtx.resume(); } };
-                
-                tab.innerHTML = `
-                    <span>${set.title}</span>
-                    ${state.sets.length > 1 ? `
-                    <button onclick="deleteSet(event, ${set.id})" class="text-current opacity-40 hover:opacity-100 transition-opacity">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>` : ''}
-                `;
-                list.appendChild(tab);
+        // 당첨 팡파르
+        const playWinSound = () => {
+            [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                setTimeout(() => playOsc(f, 'square', 0.05, 0.6), i * 120);
             });
-            document.getElementById('addSetBtn').onclick = addSet;
-        }
+        };
 
-        function renderActiveSet() {
-            const set = state.sets.find(s => s.id === state.activeId);
-            if (!set) return;
-
-            document.getElementById('activeSetTitleInput').value = set.title;
-            document.getElementById('memberCount').innerText = `${set.members.length} MEMBERS`;
-            
-            const mList = document.getElementById('memberList');
-            mList.innerHTML = '';
-            set.members.forEach((name, idx) => {
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-3 p-1 bg-slate-800/30 rounded-xl border border-slate-800 group hover:border-slate-700 transition-all";
-                div.innerHTML = `
-                    <input type="text" value="${name}" onchange="editMember(${idx}, this.value)"
-                        class="flex-1 bg-transparent px-4 py-2 text-white focus:outline-none font-medium">
-                    <button onclick="deleteMember(${idx})" class="text-slate-600 hover:text-rose-500 p-2 transition-colors">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                `;
-                mList.appendChild(div);
-            });
-        }
+        /** 데이터 관리 및 로직 **/
+        const STORAGE_KEY = 'roulette_pro_v3_sets';
+        let sets = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+            { id: Date.now(), title: "🎉 점심 메뉴 뽑기", members: ["치킨", "피자", "마라탕", "돈가스", "샌드위치", "초밥"] }
+        ];
+        let currentSetIndex = 0;
 
         const canvas = document.getElementById('rouletteCanvas');
         const ctx = canvas.getContext('2d');
+        const coreBtn = document.getElementById('coreBtn');
+        const powerFill = document.getElementById('powerFill');
+        const wheelWrapper = document.getElementById('wheelWrapper');
 
-        function drawWheel() {
-            const set = state.sets.find(s => s.id === state.activeId);
-            const size = 1000;
-            canvas.width = size;
-            canvas.height = size;
+        let isSpinning = false;
+        let rotation = 0;
+        let speed = 0;
+        let power = 0;
+        let chargeInterval = null;
+        let lastTickAngle = 0;
+        let tensionPlayed = false;
+
+        function save() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
+            renderTabs();
+            draw();
+        }
+
+        function renderTabs() {
+            const container = document.getElementById('tabContainer');
+            container.innerHTML = '';
+            sets.forEach((set, idx) => {
+                const tab = document.createElement('div');
+                tab.className = `flex items-center space-x-3 px-4 py-2 rounded-xl cursor-pointer transition-all duration-300 ${idx === currentSetIndex ? 'bg-indigo-600/20 tab-active' : 'text-slate-500 hover:bg-slate-800'}`;
+                tab.innerHTML = `
+                    <span class="text-sm font-bold" onclick="selectSet(${idx})">${set.title}</span>
+                    ${sets.length > 1 ? `<button onclick="deleteSet(${idx})" class="hover:text-red-500 text-lg font-black px-1">×</button>` : ''}
+                `;
+                container.appendChild(tab);
+            });
+        }
+
+        function selectSet(idx) {
+            if(isSpinning) return;
+            currentSetIndex = idx;
+            document.getElementById('setTitle').value = sets[idx].title;
+            renderNames();
+            renderTabs();
+            draw();
+        }
+
+        function addNewSet() {
+            if(sets.length >= 10) return;
+            const newSet = { id: Date.now(), title: `새 세트 ${sets.length + 1}`, members: ["항목 1", "항목 2"] };
+            sets.push(newSet);
+            currentSetIndex = sets.length - 1;
+            save();
+            selectSet(currentSetIndex);
+        }
+
+        function deleteSet(idx) {
+            if(sets.length <= 1) return;
+            sets.splice(idx, 1);
+            currentSetIndex = 0;
+            save();
+            selectSet(0);
+        }
+
+        function renderNames() {
+            const container = document.getElementById('nameList');
+            container.innerHTML = '';
+            const members = sets[currentSetIndex].members;
+            members.forEach((name, i) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-800 text-slate-200 px-4 py-2 rounded-xl flex items-center gap-2 border border-slate-700 transition hover:border-indigo-500";
+                div.innerHTML = `
+                    <span contenteditable="true" class="focus:outline-none" onblur="updateItem(${i}, this.innerText)">${name}</span>
+                    <button onclick="removeItem(${i})" class="text-slate-500 hover:text-rose-500 font-bold ml-1">×</button>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('itemCount').innerText = `${members.length}명`;
+            draw();
+        }
+
+        function addItem() {
+            const input = document.getElementById('newName');
+            const val = input.value.trim();
+            if(!val) return;
+            sets[currentSetIndex].members.push(val);
+            input.value = '';
+            save();
+            renderNames();
+        }
+
+        function updateItem(idx, text) {
+            sets[currentSetIndex].members[idx] = text.trim() || "이름 없음";
+            save();
+        }
+
+        function removeItem(idx) {
+            sets[currentSetIndex].members.splice(idx, 1);
+            save();
+            renderNames();
+        }
+
+        document.getElementById('setTitle').oninput = (e) => {
+            sets[currentSetIndex].title = e.target.value;
+            save();
+        };
+
+        /** 룰렛 그리기 로직 **/
+        function draw() {
+            const members = sets[currentSetIndex].members;
+            const size = canvas.width = canvas.height = 800; // 해상도 위해 크게 그림
             const centerX = size / 2;
             const centerY = size / 2;
-            const radius = size / 2 - 40;
+            const radius = size / 2 - 20;
+            const sliceAngle = (Math.PI * 2) / members.length;
 
-            if (!set || set.members.length === 0) {
-                ctx.fillStyle = "#1e293b";
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.fill();
-                return;
-            }
+            ctx.clearRect(0, 0, size, size);
 
-            const arc = (Math.PI * 2) / set.members.length;
-
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.rotate(state.rotation);
-
-            set.members.forEach((item, i) => {
-                const angle = i * arc;
-                ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(0, 0);
-                ctx.arc(0, 0, radius, angle, angle + arc);
-                ctx.fill();
+            members.forEach((name, i) => {
+                const startAngle = rotation + (i * sliceAngle);
                 
-                // 테두리
-                ctx.strokeStyle = "rgba(0,0,0,0.2)";
-                ctx.lineWidth = 10;
+                // 조각 그리기
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.fillStyle = `hsl(${i * (360 / members.length)}, 70%, 45%)`;
+                ctx.fill();
+                ctx.strokeStyle = '#020617';
+                ctx.lineWidth = 6;
                 ctx.stroke();
 
-                // 텍스트
+                // 텍스트 그리기
                 ctx.save();
-                ctx.rotate(angle + arc / 2);
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + sliceAngle / 2);
                 ctx.textAlign = "right";
-                ctx.fillStyle = (colors[i % colors.length] === '#ffffff') ? '#000000' : '#ffffff';
-                ctx.font = `bold ${Math.max(20, 60 - set.members.length * 1.5)}px Inter`;
-                ctx.fillText(item, radius - 60, 20);
+                ctx.fillStyle = "white";
+                ctx.font = "bold 34px Pretendard";
+                ctx.shadowColor = "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = 10;
+                ctx.fillText(name, radius - 60, 12);
                 ctx.restore();
             });
 
-            // 중앙 장식
+            // 중앙 홀 비우기
             ctx.beginPath();
-            ctx.arc(0, 0, 80, 0, Math.PI * 2);
-            ctx.fillStyle = "#0f172a";
+            ctx.arc(centerX, centerY, 90, 0, Math.PI * 2);
+            ctx.fillStyle = '#020617';
             ctx.fill();
-            ctx.strokeStyle = "#4f46e5";
-            ctx.lineWidth = 15;
-            ctx.stroke();
-
-            ctx.restore();
         }
 
-        const spinBtn = document.getElementById('spinBtn');
-
-        // 파워 충전 인터랙티브
-        spinBtn.onmousedown = startPowerCharge;
-        spinBtn.ontouchstart = startPowerCharge;
-
-        function startPowerCharge() {
-            if (state.isSpinning) return;
-            audioCtx.resume();
-            state.power = 0;
-            document.getElementById('powerText').innerText = "CHARGING...";
-            state.pressInterval = setInterval(() => {
-                state.power += 2;
-                if (state.power >= 100) state.power = 100;
-                updatePowerUI();
-                playTick(0.05);
+        /** 스핀 인터랙션 **/
+        function startCharge() {
+            if (isSpinning || sets[currentSetIndex].members.length < 2) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            power = 0;
+            coreBtn.classList.add('charging');
+            startChargeSound();
+            
+            chargeInterval = setInterval(() => {
+                power = Math.min(power + 1.8, 100);
+                powerFill.style.width = power + '%';
             }, 30);
         }
 
-        window.onmouseup = stopPowerCharge;
-        window.ontouchend = stopPowerCharge;
-
-        function stopPowerCharge() {
-            if (state.pressInterval) {
-                clearInterval(state.pressInterval);
-                state.pressInterval = null;
-                if (!state.isSpinning) triggerSpin();
+        function releaseCharge() {
+            if (!chargeInterval) return;
+            clearInterval(chargeInterval);
+            chargeInterval = null;
+            stopChargeSound();
+            coreBtn.classList.remove('charging');
+            
+            if (power > 5) {
+                beginSpin();
+            } else {
+                power = 0;
+                powerFill.style.width = '0%';
             }
         }
 
-        function updatePowerUI() {
-            document.getElementById('powerBar').style.width = state.power + '%';
-        }
-
-        function triggerSpin() {
-            const set = state.sets.find(s => s.id === state.activeId);
-            if (set.members.length < 2) return;
-
-            state.isSpinning = true;
-            spinBtn.disabled = true;
-            document.getElementById('rouletteWrapper').classList.add('is-spinning');
-            
-            // 파워에 따른 초기 속도 설정 (최소 0.2, 최대 0.8)
-            state.velocity = 0.2 + (state.power / 100) * 0.6;
-            
-            let lastTickAngle = state.rotation;
-            const friction = 0.99; // 서스펜스를 위해 마찰력을 낮춤
-
-            function animate() {
-                state.rotation += state.velocity;
-                state.velocity *= friction;
-
-                // 회전 속도에 따른 화면 진동 효과
-                if (state.velocity > 0.3) {
-                    document.getElementById('mainApp').classList.add('shake-active');
-                } else {
-                    document.getElementById('mainApp').classList.remove('shake-active');
-                }
-
-                // 틱 소리 동기화
-                const arc = (Math.PI * 2) / set.members.length;
-                if (Math.floor(state.rotation / arc) !== Math.floor(lastTickAngle / arc)) {
-                    playTick(Math.max(0.02, state.velocity * 0.2));
-                    lastTickAngle = state.rotation;
-                }
-
-                drawWheel();
-
-                if (state.velocity > 0.001) {
-                    requestAnimationFrame(animate);
-                } else {
-                    finishSpin();
-                }
-            }
+        function beginSpin() {
+            isSpinning = true;
+            speed = 0.2 + (power / 120); // 파워에 따른 속도 결정
+            power = 0;
+            powerFill.style.width = '0%';
+            tensionPlayed = false;
             animate();
         }
 
-        function finishSpin() {
-            state.isSpinning = false;
-            spinBtn.disabled = false;
-            document.getElementById('rouletteWrapper').classList.remove('is-spinning');
-            document.getElementById('mainApp').classList.remove('shake-active');
-            
-            // 당첨자 계산
-            const set = state.sets.find(s => s.id === state.activeId);
-            const arc = (Math.PI * 2) / set.members.length;
-            const normalizedRotation = (state.rotation + Math.PI / 2) % (Math.PI * 2);
-            const index = Math.floor((Math.PI * 2 - normalizedRotation) / arc) % set.members.length;
-            const winner = set.members[index];
+        function animate() {
+            if (!isSpinning) return;
 
-            // 긴장감 넘치는 지연 노출
-            playImpact();
-            setTimeout(() => {
-                showResult(winner);
-            }, 800);
+            rotation += speed;
+            speed *= 0.988; // 감속 계수
+
+            // 틱틱 효과음 (각도 기반)
+            const sliceAngle = (Math.PI * 2) / sets[currentSetIndex].members.length;
+            if (Math.abs(rotation - lastTickAngle) >= sliceAngle) {
+                playTick();
+                lastTickAngle = rotation;
+            }
+
+            // 긴장감 효과 (속도가 느려질 때 심장박동)
+            if (speed < 0.04 && speed > 0.01 && !tensionPlayed) {
+                playTension();
+                tensionPlayed = true;
+                setTimeout(() => tensionPlayed = false, 500);
+            }
+
+            // 속도에 따른 화면 진동
+            if (speed > 0.1) {
+                wheelWrapper.classList.add('shaking');
+            } else {
+                wheelWrapper.classList.remove('shaking');
+            }
+
+            draw();
+
+            if (speed < 0.001) {
+                isSpinning = false;
+                speed = 0;
+                wheelWrapper.classList.remove('shaking');
+                showWinner();
+            } else {
+                requestAnimationFrame(animate);
+            }
         }
 
-        function showResult(winner) {
-            const modal = document.getElementById('resultModal');
-            document.getElementById('winnerName').innerText = winner;
-            modal.classList.remove('hidden');
+        function showWinner() {
+            const members = sets[currentSetIndex].members;
+            const sliceAngle = 360 / members.length;
+            // 회전각도를 도로 변환 후 정규화 (상단 포인터는 270도 지점)
+            const normalizedRotation = (rotation * 180 / Math.PI) % 360;
+            const index = Math.floor((360 - (normalizedRotation + 270) % 360) / sliceAngle) % members.length;
             
+            const winner = members[index];
+            document.getElementById('resultName').innerText = winner;
+            document.getElementById('resultOverlay').classList.remove('hidden');
+            
+            playWinSound();
             confetti({
                 particleCount: 200,
                 spread: 100,
                 origin: { y: 0.6 },
-                colors: colors
+                colors: ['#6366f1', '#f43f5e', '#ffffff', '#fbbf24']
             });
         }
 
-        function addSet() {
-            if (state.sets.length >= 10) return;
-            const newSet = { id: Date.now(), title: "새로운 세트", members: ["멤버 1", "멤버 2"] };
-            state.sets.push(newSet);
-            state.activeId = newSet.id;
-            save(); renderAll();
+        function closeResult() {
+            document.getElementById('resultOverlay').classList.add('hidden');
         }
 
-        function deleteSet(e, id) {
-            e.stopPropagation();
-            state.sets = state.sets.filter(s => s.id !== id);
-            if (state.activeId === id) state.activeId = state.sets[0].id;
-            save(); renderAll();
-        }
+        // 이벤트 리스너 등록
+        coreBtn.addEventListener('mousedown', startCharge);
+        window.addEventListener('mouseup', releaseCharge);
+        coreBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startCharge(); });
+        window.addEventListener('touchend', (e) => { e.preventDefault(); releaseCharge(); });
+        
+        // 엔터키 추가 대응
+        document.getElementById('newName').onkeypress = (e) => { if(e.key === 'Enter') addItem(); };
 
-        document.getElementById('activeSetTitleInput').onchange = (e) => {
-            const set = state.sets.find(s => s.id === state.activeId);
-            set.title = e.target.value;
-            save(); renderTabs();
-        };
-
-        document.getElementById('addNameBtn').onclick = () => {
-            const input = document.getElementById('newNameInput');
-            if (!input.value.trim()) return;
-            const set = state.sets.find(s => s.id === state.activeId);
-            set.members.push(input.value.trim());
-            input.value = '';
-            save(); renderAll();
-        };
-
-        function editMember(idx, val) {
-            const set = state.sets.find(s => s.id === state.activeId);
-            set.members[idx] = val;
-            save(); drawWheel();
-        }
-
-        function deleteMember(idx) {
-            const set = state.sets.find(s => s.id === state.activeId);
-            set.members.splice(idx, 1);
-            save(); renderAll();
-        }
-
-        function closeModal() {
-            document.getElementById('resultModal').classList.add('hidden');
-            state.power = 0;
-            updatePowerUI();
-            document.getElementById('powerText').innerText = "READY";
-        }
-
-        window.onload = init;
+        // 초기화
+        selectSet(0);
     </script>
 </body>
 </html>
